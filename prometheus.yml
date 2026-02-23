@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "cadvisor"
+    static_configs:
+      - targets: ["54.221.161.210:8081"]
+
+  - job_name: "node-app"
+    static_configs:
+      - targets: ["54.221.161.210:3000"]
+
+  - job_name: "python-app"
+    static_configs:
+      - targets: ["54.221.161.210:8000"]
