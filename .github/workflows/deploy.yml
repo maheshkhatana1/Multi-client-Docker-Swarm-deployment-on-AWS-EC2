@@ -1,0 +1,45 @@
+name: Build and Deploy to Docker Swarm
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Build Node app
+      - name: Build Node Image
+        run: docker build -t maheshkhatana1210/node-app:${{ github.sha }} ./devops-sample-nest
+
+      # Build Python app
+      - name: Build Python Image
+        run: docker build -t maheshkhatana1210/python-app:${{ github.sha }} ./devops-sample-fast
+
+      # Push images
+      - name: Push Images
+        run: |
+          docker push maheshkhatana1210/node-app:${{ github.sha }}
+          docker push maheshkhatana1210/python-app:${{ github.sha }}
+
+      # Deploy to Swarm
+      - name: Deploy to Swarm Manager
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SWARM_HOST }}
+          username: ubuntu
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            docker service update --image maheshkhatana1210/node-app:${{ github.sha }} myapp_node-app
+            docker service update --image maheshkhatana1210/python-app:${{ github.sha }} myapp_python-app
