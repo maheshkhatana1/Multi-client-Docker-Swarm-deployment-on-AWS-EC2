@@ -18,6 +18,50 @@ The setup simulates multiple clients accessing different services via **Nginx vi
 
 
 ---
+# 4️⃣ Scaling & Deployment Scenario
+Docker Swarm allows services to be **scaled and updated** without downtime. Below are examples using the `myapp_node-app` service.
+---
+
+### **Manual Scale Command**
+Scale the service to 5 replicas:
+
+```bash
+docker service scale myapp_node-app=5
+Verify the scale:
+docker service ls
+docker service ps myapp_node-app
+Swarm will automatically create new tasks (containers) to reach the desired replica count.
+
+Rolling Update
+Update the service image with zero downtime:
+
+docker service update \
+  --image maheshkhatana1210/node-app:v2 \
+  --update-parallelism 1 \
+  --update-delay 10s \
+  myapp_node-app
+
+--update-parallelism 1: Update one replica at a time
+--update-delay 10s: Wait 10 seconds between updating replicas
+
+Verify update:
+docker service ps myapp_node-app
+Swarm will stop old tasks only after new tasks are healthy, ensuring zero-downtime deployment.
+
+Zero-Downtime Deployment
+Swarm ensures that at least the minimum number of replicas are running during updates.
+Requests are automatically routed to healthy containers through internal load balancing.
+
+How Swarm Ensures Availability
+Swarm monitors the desired state and automatically restarts failed containers.
+If a node goes down, Swarm reschedules tasks to other available nodes.
+Health checks are used to ensure containers are ready before routing traffic.
+
+Service Discovery
+Each service gets a DNS name equal to its service name (e.g., myapp_node-app).
+Containers in the same Swarm network can resolve services by name without knowing IPs.
+Nginx and other services can route traffic using these internal service names.
+
 
 ## **Services**
 
