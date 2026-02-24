@@ -41,7 +41,6 @@ The setup simulates multiple clients accessing different services via **Nginx vi
 
 > Use `/etc/hosts` mapping to test in browser:
 
-
 <EC2-IP> client-a.example.com
 <EC2-IP> client-b.example.com
 
