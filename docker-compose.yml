@@ -1,0 +1,143 @@
+version: "3.8"
+
+services:
+
+  # ===============================
+  # NODE APP (NestJS)
+  # ===============================
+  node-app:
+    image: maheshkhatana1210/node-app:v1
+    networks:
+      - app-network
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===============================
+  # PYTHON APP (FastAPI)
+  # ===============================
+  python-app:
+    image: maheshkhatana1210/python-app:v1
+    networks:
+      - app-network
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+      update_config:
+        parallelism: 1
+        delay: 10s
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/hello"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===============================
+  # NGINX REVERSE PROXY
+  # ===============================
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    configs:
+      - source: nginx_config
+        target: /etc/nginx/nginx.conf
+    networks:
+      - app-network
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 256M
+
+  # ===============================
+  # CADVISOR (Container Metrics)
+  # ===============================
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - app-network
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 300M
+
+  # ===============================
+  # PROMETHEUS (Metrics Storage)
+  # ===============================
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    configs:
+      - source: prometheus_config
+        target: /etc/prometheus/prometheus.yml
+    networks:
+      - app-network
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 400M
+
+  # ===============================
+  # GRAFANA (Dashboard)
+  # ===============================
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    networks:
+      - app-network
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 300M
+
+# ===============================
+# NETWORK
+# ===============================
+networks:
+  app-network:
+    driver: overlay
+
+# ===============================
+# CONFIG FILES
+# ===============================
+configs:
+  nginx_config:
+    file: ./nginx.conf
+
+  prometheus_config:
+    file: ./prometheus.yml
